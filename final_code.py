@@ -247,7 +247,7 @@ def diffuse(hit_object, posHit, lightPos, normal):
     return max(lightDirection.dot(normal), 0) * hit_object.Kd
 
 
-def trace_ray(ray, triangles, spheres, lights, bounding_box):
+def trace_ray(ray, triangles, spheres, lights, bounding_box, bounces=0):
     '''
     Returns the color of the ray.
     Color changes depending on the distance to the hit
