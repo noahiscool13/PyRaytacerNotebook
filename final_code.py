@@ -14,9 +14,28 @@ matplotlib.use("TkAgg")
 
 
 class PointLight:
-    def __init__(self, pos, color, size):
+    def __init__(self, pos, color):
         '''
         Point light to make your world a little bit happier.
+        :param pos: position of the light
+        :param color: the color of the light
+        '''
+        self.pos = pos
+        self.color = color
+
+    def get_pos(self):
+        '''
+        Gets the position of the light source.
+        The possition is translated by the offset vector
+        :return: Light source position
+        '''
+        return self.pos
+
+
+class SphereLight:
+    def __init__(self, pos, color, size):
+        '''
+        Sphere light that can cast soft shadows.
         :param pos: position of the light
         :param color: the color of the light
         :param size: the size of the light
@@ -179,43 +198,39 @@ class Ray:
         :return: Distance to triangle, 0/False is no hit
         '''
 
-        # Calculate the vectors describing the edges of the triangle
-        edge1 = other.b - other.a
-        edge2 = other.c - other.a
-
         # Check if the ray and triangle are not parallel
-        h = self.direction.cross_product(edge2)
-        a = edge1.dot(h)
-
-        if -EPSILON < a < EPSILON:
+        if -EPSILON < other.normal.dot(self.direction) < EPSILON:
             return False
 
-        # Calculate U/V (barycentric coordinates) of the hit on the triangle
-        f = 1.0 / a
-        s = self.origin - other.a
-        u = f * (s.dot(h))
-
-        q = s.cross_product(edge1)
-        v = f * self.direction.dot(q)
-
-        # The U must be between 0 and one
-        if u < 0 or u > 1:
+        # Find the distance t from the ray origin to the plain of the triangle
+        d = other.normal.dot(other.b)
+        t = (other.a - self.origin).dot(other.normal) / other.normal.dot(self.direction)
+        if (t < 0):
             return False
 
-        # The V must be larger than 0, and U+V must be smaller than one
-        if v < 0 or u + v > 1:
+        # Find the point where the ray hits the plain of the triangle
+        P = self.origin + t * self.direction
+
+        # Check if the point is to the left of all the edges
+        edge1 = other.b - other.a
+        vp0 = P - other.a
+        C = edge1.cross_product(vp0)
+        if other.normal.dot(C) < 0:
             return False
 
-        # Calculate the distance from the origin of the ray to the hit
-        t = f * edge2.dot(q)
-
-        # The distance must be positive because,
-        # otherwise the triangle could be behind the ray
-        if t < EPSILON:
+        edge2 = other.c - other.b
+        vp1 = P - other.b
+        C = edge2.cross_product(vp1)
+        if other.normal.dot(C) < 0:
             return False
 
-        # There was a hit! Return the distance
-        return t
+        edge3 = other.a - other.c
+        vp2 = P - other.c
+        C = edge3.cross_product(vp2)
+        if other.normal.dot(C) < 0:
+            return False
+
+        # There was
 
 
 def specular(hit_object, posHit, lightPos, cameraPos, normal):
@@ -294,7 +309,7 @@ def trace_ray(ray, triangles, spheres, lights, bounding_box, bounces=0):
                 col += diffuse(closest_obj, hit_pos, light.get_pos(), normal) * light.color
                 col += specular(closest_obj, hit_pos, light.get_pos(), ray.origin, normal) * light.color
 
-        if closest_obj.refl > 0:
+        if closest_obj.refl > 0 and bounces<5:
             reflec_direction = (ray.direction - 2 * (normal.dot(ray.direction)) * normal)
 
             bounce_ray = Ray(hit_pos, reflec_direction)
@@ -504,10 +519,10 @@ if __name__ == '__main__':
 
     triangles = ground + body + wheels
 
-    lights = [PointLight(pos=Vec3(-0.3, -0.4, 1), color=Vec3(0.2), size=0.1),
-              PointLight(pos=Vec3(-3, 10, -3), color=Vec3(0.4), size=0.1),
-              PointLight(pos=Vec3(0), color=Vec3(0.3), size=0.1),
-              PointLight(pos=Vec3(-1, 0, 10), color=Vec3(0.4), size=0.1)]
+    lights = [SphereLight(pos=Vec3(-0.3, -0.4, 1), color=Vec3(0.2), size=0.1),
+              SphereLight(pos=Vec3(-3, 10, -3), color=Vec3(0.4), size=0.1),
+              SphereLight(pos=Vec3(0), color=Vec3(0.3), size=0.1),
+              SphereLight(pos=Vec3(-1, 0, 10), color=Vec3(0.4), size=0.1)]
 
     frames = []
 
