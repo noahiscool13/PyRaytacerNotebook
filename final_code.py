@@ -215,22 +215,23 @@ class Ray:
         edge1 = other.b - other.a
         vp0 = P - other.a
         C = edge1.cross_product(vp0)
-        if other.normal.dot(C) < 0:
+        if other.normal.dot(C) < -EPSILON:
             return False
 
         edge2 = other.c - other.b
         vp1 = P - other.b
         C = edge2.cross_product(vp1)
-        if other.normal.dot(C) < 0:
+        if other.normal.dot(C) < -EPSILON:
             return False
 
         edge3 = other.a - other.c
         vp2 = P - other.c
         C = edge3.cross_product(vp2)
-        if other.normal.dot(C) < 0:
+        if other.normal.dot(C) < -EPSILON:
             return False
 
-        # There was
+        # There was a hit! Return the distance
+        return t
 
 
 def specular(hit_object, posHit, lightPos, cameraPos, normal):
